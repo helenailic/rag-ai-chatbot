@@ -1,0 +1,28 @@
+#this is how app.py in data folder will need to be updated when changing from sqlite to SQL
+# app.py
+from database_manager import EventManager
+from config import get_connection_string
+
+# Initialize database connection
+event_manager = EventManager(get_connection_string())
+
+# Update your route handlers to use the event_manager instance
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        # ... existing code ...
+        
+        # When handling data queries
+        if any(keyword in user_message.lower() for keyword in data_keywords):
+            try:
+                corrected_query = correct_spelling(user_message)
+                interpretation = query_processor.interpret_query(corrected_query)
+                
+                if interpretation and interpretation.get('action'):
+                    response = handle_data_query(
+                        user_message, 
+                        interpretation, 
+                        user_id,
+                        event_manager  # Pass the event_manager instance
+                    )
+                    return jsonify({"response": response})

@@ -1,0 +1,70 @@
+#this is how database_manager will change when connecting to sql
+# database_manager.py
+import sqlalchemy as sa
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from contextlib import contextmanager
+
+Base = declarative_base()
+
+class Event(Base):
+    __tablename__ = 'events'
+    
+    id = sa.Column(sa.Integer, primary_key=True)
+    event_name = sa.Column(sa.String)
+    venue = sa.Column(sa.String)
+    event_date = sa.Column(sa.DateTime)
+    ticket_price = sa.Column(sa.Float)
+    num_tickets = sa.Column(sa.Integer)
+    # Add other fields as needed
+
+class EventManager:
+    def __init__(self, connection_string="mysql+pymysql://user:password@localhost/database_name"):
+        self.engine = sa.create_engine(connection_string)
+        self.Session = sessionmaker(bind=self.engine)
+        
+    @contextmanager
+    def session_scope(self):
+        """Provide a transactional scope around a series of operations."""
+        session = self.Session()
+        try:
+            yield session
+            session.commit()
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def get_event_value(self, event_name, field, specific_id=None):
+        with self.session_scope() as session:
+            query = session.query(Event)
+            if specific_id:
+                query = query.filter(Event.id == specific_id)
+            query = query.filter(Event.event_name.ilike(f"%{event_name}%"))
+            
+            event = query.first()
+            return getattr(event, field) if event else None
+
+    def update_event(self, event_name, field, value, specific_id=None):
+        with self.session_scope() as session:
+            query = session.query(Event)
+            if specific_id:
+                query = query.filter(Event.id == specific_id)
+            query = query.filter(Event.event_name.ilike(f"%{event_name}%"))
+            
+            event = query.first()
+            if not event:
+                raise ValueError(f"Event not found: {event_name}")
+                
+            old_value = getattr(event, field)
+            setattr(event, field, value)
+            
+            return old_value, value
+
+    def get_all_events(self):
+        with self.session_scope() as session:
+            events = session.query(Event).all()
+            return [(e.id, e.event_name, e.ticket_price, 
+                    e.num_tickets, e.venue, e.event_date) 
+                    for e in events]

@@ -1,0 +1,17 @@
+#Connect to sql
+# config.py
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DB_CONFIG = {
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'user': os.getenv('DB_USER', 'default_user'),
+    'password': os.getenv('DB_PASSWORD', 'default_password'),
+    'database': os.getenv('DB_NAME', 'events_db'),
+    'port': os.getenv('DB_PORT', 3306)
+}
+
+def get_connection_string():
+    return f"mysql+pymysql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
